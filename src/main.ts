@@ -13,9 +13,9 @@ const words = [
   ["eat là", "is eating"],
   ["eat", "eat"],
   ["eat an", "eat food"],
+  ["nha", "Home"],
+  ["nha hom", "IDK"],
 ];
-
-localforage.setItem("words", words);
 
 // Canvas
 const canvas = document.getElementById("canvas")! as HTMLCanvasElement;
@@ -32,15 +32,6 @@ window.addEventListener("resize", () => {
   canvas.height = window.innerHeight / scale;
   ctx.filter = `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><filter id="f" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter></svg>#f')`;
 });
-
-let allWords: string[] = [];
-
-words.forEach((word) => {
-  const newWords = word[0].split(" ");
-  allWords.push(...newWords);
-});
-
-allWords = [...new Set(allWords)];
 
 let laWords: any[] = words.filter((word) => word[0].includes("là"));
 
@@ -63,15 +54,6 @@ laWords.forEach((word, i) => {
   laWords[i] = pads.create(ctx, flr(x), flr(y), word[0]);
 });
 
-// pads.create(
-//   ctx,
-//   flr(canvas.width / 2),
-//   flr(canvas.height / 2),
-//   "Bạn có khỏe không hỗ trợ",
-// );
-//
-// pads.create(ctx, flr(canvas.width / 2), flr(canvas.height / 4), "How are you?");
-
 // Events
 window.addEventListener("click", (e: MouseEvent) => {
   exploder.expload(e.clientX / scale, e.clientY / scale);
@@ -91,6 +73,43 @@ window.addEventListener("click", (e: MouseEvent) => {
 // for (let i = 0; i < 20; i += 1) {
 //   stars.push(newStar());
 // }
+
+const ship = document.getElementById("ship") as HTMLImageElement;
+
+const player = {
+  spr: ship,
+  spd: 1,
+  x: 0,
+  y: 0,
+  dx: 0,
+  dy: 0,
+  vx: 0,
+  vy: 0,
+  rotation: 0,
+  angle: 0,
+};
+
+window.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  if (e.key === "ArrowLeft") {
+    player.rotation = -1;
+  } else if (e.key === "ArrowRight") {
+    player.rotation = 1;
+  } else if (e.key === "ArrowUp") {
+    player.dy = player.spd * -1;
+  } else if (e.key === "ArrowDown") {
+    player.dy = player.spd;
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    player.rotation = 0;
+  } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+    player.dx = 0;
+    player.dy = 0;
+  }
+});
 
 let earthY = 0;
 let earthX = 0;
@@ -138,6 +157,33 @@ const render = (dt: number, frame: number) => {
 
   exploder.render(dt, ctx);
   pads.render(dt, frame);
+
+  player.vx += player.dx * 0.1;
+  player.vy += player.dy * 0.1;
+
+  player.vx *= 0.9;
+  player.vy *= 0.9;
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+  player.angle += player.rotation;
+
+  ctx.save();
+  ctx.translate(flr(player.x + 48 / 2), flr(player.y + 48 / 2));
+  ctx.rotate((player.angle * Math.PI) / 180);
+  ctx.drawImage(
+    player.spr,
+    player.x,
+    player.y,
+    48,
+    48,
+    -48 / 2,
+    -48 / 2,
+    48,
+    48,
+  );
+  ctx.restore();
 
   // const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   // const data = imageData.data;
